@@ -1,37 +1,31 @@
 package com.cola.vita;
 
 import android.os.Bundle;
-import android.support.annotation.NonNull;
-import android.support.design.widget.BottomNavigationView;
-import android.support.v4.app.Fragment;
-import android.support.v4.app.FragmentManager;
-import android.support.v4.app.FragmentTransaction;
-import android.support.v7.app.AppCompatActivity;
-import android.view.MenuItem;
-import android.widget.TextView;
+
+import androidx.appcompat.app.AppCompatActivity;
+import androidx.fragment.app.Fragment;
+import androidx.fragment.app.FragmentManager;
+import androidx.fragment.app.FragmentTransaction;
+import androidx.room.Room;
+
+import com.google.android.material.bottomnavigation.BottomNavigationView;
 
 public class MainActivity extends AppCompatActivity {
-    private TextView mTextMessage;
+
+    private VitaDatabase db;
 
     private BottomNavigationView.OnNavigationItemSelectedListener mOnNavigationItemSelectedListener
-            = new BottomNavigationView.OnNavigationItemSelectedListener() {
-
-        @Override
-        public boolean onNavigationItemSelected(@NonNull MenuItem item) {
-            switch (item.getItemId()) {
-                case R.id.navigation_home:
-                    entryPointFragmentCall(new Home());
-                    return true;
-                case R.id.navigation_dashboard:
-                    entryPointFragmentCall(new Timer());
-                    return true;
-                case R.id.navigation_notifications:
-                    //mTextMessage.setText(R.string.title_notifications);
-                    return true;
-            }
-            return false;
-        }
-    };
+            = item -> {
+                switch (item.getItemId()) {
+                    case R.id.navigation_home:
+                        entryPointFragmentCall(new Home());
+                        return true;
+                    case R.id.navigation_dashboard:
+                        entryPointFragmentCall(new Timer());
+                        return true;
+                }
+                return false;
+            };
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -40,9 +34,11 @@ public class MainActivity extends AppCompatActivity {
         BottomNavigationView navView = findViewById(R.id.nav_view);
         navView.setOnNavigationItemSelectedListener(mOnNavigationItemSelectedListener);
         entryPointFragmentCall(new Home());
+
+        initializeDb();
     }
 
-    private void entryPointFragmentCall(Fragment fragment){
+    private void entryPointFragmentCall(Fragment fragment) {
         getSupportFragmentManager().popBackStack(null, FragmentManager.POP_BACK_STACK_INCLUSIVE);
         getSupportFragmentManager().beginTransaction()
                 .replace(R.id.container, fragment)
@@ -50,4 +46,11 @@ public class MainActivity extends AppCompatActivity {
                 .commit();
     }
 
+    private void initializeDb() {
+        db = Room.databaseBuilder(getApplicationContext(), VitaDatabase.class, "vita").fallbackToDestructiveMigration().build();
+    }
+
+    public VitaDatabase getDb() {
+        return db;
+    }
 }

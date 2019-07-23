@@ -3,9 +3,6 @@ package com.cola.vita;
 import android.media.MediaPlayer;
 import android.os.Bundle;
 import android.os.CountDownTimer;
-import android.support.annotation.NonNull;
-import android.support.annotation.Nullable;
-import android.support.v4.app.Fragment;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -14,6 +11,10 @@ import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.Spinner;
 import android.widget.TextView;
+
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
+import androidx.fragment.app.Fragment;
 
 public class Timer extends Fragment {
 
@@ -24,6 +25,8 @@ public class Timer extends Fragment {
     private CountDownTimer c;
     private int s, pass, orginalPass;
     private MediaPlayer mp;
+    private DBInterface dbInterface;
+    private long remainingTime = 0;
 
     @Nullable
     @Override
@@ -35,6 +38,8 @@ public class Timer extends Fragment {
         reset = view.findViewById(R.id.reset);
         start = view.findViewById(R.id.start);
         fenomena = view.findViewById(R.id.fenomena);
+
+        dbInterface = new DBInterface();
 
         Spinner spinner = view.findViewById(R.id.spinner);
         ArrayAdapter<String> adapter = new ArrayAdapter<>(getContext(), android.R.layout.simple_spinner_item, materie);
@@ -54,11 +59,12 @@ public class Timer extends Fragment {
                     public void onTick(long millisUntilFinished) {
                         minutes.setText(getMinutes(millisUntilFinished));
                         seconds.setText(getSeconds(millisUntilFinished));
+                        remainingTime = s -  millisUntilFinished / 1000;
                     }
 
                     public void onFinish() {
                         mp.start();
-                        update();
+                        update(false);
                     }
 
                 };
@@ -87,33 +93,18 @@ public class Timer extends Fragment {
 
             public void onFinish() {
                 mp.start();
-                update();
+                update(false);
             }
 
         };
 
         reset();
 
-        start.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                c.start();
-            }
-        });
+        start.setOnClickListener(view1 -> c.start());
 
-        fenomena.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                update();
-            }
-        });
+        fenomena.setOnClickListener(view12 -> update(true));
 
-        reset.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                reset();
-            }
-        });
+        reset.setOnClickListener(view13 -> reset());
 
         return view;
     }
@@ -141,7 +132,13 @@ public class Timer extends Fragment {
         return tmp;
     }
 
-    private void update() {
+    private void update(boolean flag) {
+        Timing timing = new Timing();
+        timing.id_set = 0;
+        timing.time = remainingTime;
+        timing.skipped = flag;
+        new DBInterface().execute(1, ((MainActivity)getActivity()).getDb(), timing);
+
         c.cancel();
         c.start();
         if (pass > 0){
